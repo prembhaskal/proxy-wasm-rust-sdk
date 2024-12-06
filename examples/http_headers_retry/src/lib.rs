@@ -17,6 +17,7 @@ use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use std::iter;
 use std::time::Duration;
+use std::collections::HashMap;
 
 proxy_wasm::main! {{
     proxy_wasm::set_log_level(LogLevel::Trace);
@@ -34,13 +35,16 @@ impl RootContext for HttpHeadersRoot {
 
     fn create_http_context(&self, context_id: u32) -> Option<Box<dyn HttpContext>> {
         let mut call_count = 0;
-        Some(Box::new(HttpHeaders { context_id, call_count}))
+        Some(Box::new(HttpHeaders { context_id, call_count, total_request_body_size: 0, request_headers: HashMap::new(), original_body: None }))
     }
 }
 
 struct HttpHeaders {
     context_id: u32,
     call_count: u32,
+    total_request_body_size: usize,
+    request_headers: HashMap<String, String>,
+    original_body: Option<Vec<u8>>,
 }
 
 impl Context for HttpHeaders {
@@ -81,21 +85,28 @@ impl Context for HttpHeaders {
         if self.call_count == 1 {
             self.call_count+=1;
 
-            let json_data = r#"{
-                "data": "some data"
-            }"#;
-            let json_bytes: &[u8] = json_data.as_bytes();
+            
+                        // let json_data = r#"{
+                        //         "data": "some data"
+                        //     }"#;
+                        //     let json_bytes: &[u8] = json_data.as_bytes();
+            let json_bytes = self.original_body.as_deref().unwrap_or(&[]);
+
+            // let json_data = r#"{
+            //     "data": "some data"
+            // }"#;
+            // let json_bytes: &[u8] = json_data.as_bytes();
 
             // make one more call
-            info!("#{} retrying request to new cluster", self.context_id);
+            info!("#{} retrying original request to new cluster", self.context_id);
             self.dispatch_http_call(
                 "clusterb",
                 vec![
-                    (":method", "POST"),
-                    (":path", "/post"),
-                    (":authority", "localhost:10000"),
-                    (":content-type", "application/json"),
-                    (":accept", "application/json"),
+                    (":method", self.request_headers.get(":method").unwrap_or(&"GET".to_string())),
+                    (":path", self.request_headers.get(":path").unwrap_or(&"/post".to_string())),
+                    (":authority", self.request_headers.get(":authority").unwrap_or(&"localhost:10000".to_string())),
+                    (":content-type", self.request_headers.get(":content-type").unwrap_or(&"".to_string())),
+                    (":accept", self.request_headers.get(":accept").unwrap_or(&"".to_string())),
                     ],
                     Some(json_bytes),
                     vec![],
@@ -128,6 +139,13 @@ impl HttpContext for HttpHeaders {
             info!("#{} -> {}: {}", self.context_id, name, value);
         }
 
+        // convert to map, make key to lowercase
+        self.request_headers = self
+            .get_http_request_headers()
+            .into_iter()
+            .map(|(k, v)| (k.to_lowercase(), v))
+            .collect();
+
         // This will get the upstream cluster name where the request will be sent
         match self.get_property(vec!["cluster_name"]) {
             Some(cluster_name_bytes) => {
@@ -149,6 +167,18 @@ impl HttpContext for HttpHeaders {
             }
             _ => Action::Continue,
         }
+    }
+
+    // refer https://tetrate.io/blog/validating-a-request-payload-with-wasm/
+    fn on_http_request_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
+        self.total_request_body_size += body_size;
+        // TODO - add flag to check if this is a DR request, only then buffer body.
+        if !end_of_stream {
+            return Action::Pause // wait until we whole body.
+        }
+
+       self.original_body = self.get_http_request_body(0, self.total_request_body_size);
+        Action::Continue
     }
 
     fn on_http_response_headers(&mut self, _: usize, _: bool) -> Action {

@@ -12,12 +12,17 @@ $ cp target/wasm32-wasip1/release/proxy_wasm_example_http_headers.wasm /tmp/
 
 $ envoy -c envoy-retry.yaml --log-level trace
 
-$ curl http://localhost:10000/status/302 --headers "host=httpbin"
-
-$ start cluster 1 and 2
+$ start cluster a and b
 $ alias docker=podman
 $ docker run -p 8081:80 kennethreitz/httpbin
 $ docker run -p 8082:80 kennethreitz/httpbin
+
+$ # make a 302 call which will trigger the retry flow.
+$ curl http://localhost:10000/status/302 --headers "host=httpbin"
+
+$ # make a 302 status call with some body
+$ curl http://localhost:10000/status/302 --data '{"data": "original_data"}' -H "content-type: application/json"
+
 ```
 
 ### Using in Envoy
