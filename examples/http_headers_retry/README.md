@@ -11,7 +11,7 @@ $ cargo build --target wasm32-wasip1 --release
 $ cp target/wasm32-wasip1/release/proxy_wasm_example_http_headers.wasm /tmp/
 
 $ # assuming envoy installed locally, Also tested from company fork of envoy.
-$ envoy -c envoy-retry.yaml --log-level trace
+$ envoy -c envoy-retry.yaml --log-level info
 
 $ start cluster a and b
 $ alias docker=podman
