@@ -61,6 +61,10 @@ impl Context for HttpHeaders {
             info!("Response body: {:?}", String::from_utf8_lossy(body));
         }
 
+        if self.call_count > 2 {
+            panic!("incorrect state - call_count {}", self.call_count);
+        }
+
         if self.call_count == 2 {
             // final clusterb call
             info!("sending cluster b response back");
