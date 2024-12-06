@@ -44,29 +44,56 @@ struct HttpHeaders {
 }
 
 impl Context for HttpHeaders {
-    fn on_http_call_response(&mut self, token_id: u32, _: usize, _: usize, _: usize) {
+    fn on_http_call_response(&mut self, token_id: u32, _: usize, body_size: usize, _: usize) {
         info!("got response for call {}", token_id);
         let resp_headers = self.get_http_call_response_headers();
 
+        let mut status_code = 0;
         for (name, value) in resp_headers.iter() {
+            if name == ":status" {
+                status_code = value.parse().unwrap_or(0);
+            }
             info!("#{} http call response {}: {}", self.context_id, name, value)
         }
-        if self.call_count == 2 {
-            self.resume_http_response();
+
+        let response_body = self.get_http_call_response_body(0, body_size);
+        if let Some(body) = &response_body {
+            info!("Response body: {:?}", String::from_utf8_lossy(body));
         }
+
+        if self.call_count == 2 {
+            // final clusterb call
+            info!("sending cluster b response back");
+            self.send_http_response(
+                status_code as u32,
+                resp_headers.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect(),
+                Some(response_body.as_deref().unwrap_or(&[])),
+            );
+
+            // self.resume_http_response();
+        }
+
 
         if self.call_count == 1 {
             self.call_count+=1;
+
+            let json_data = r#"{
+                "data": "some data"
+            }"#;
+            let json_bytes: &[u8] = json_data.as_bytes();
+
             // make one more call
             info!("#{} retrying request to new cluster", self.context_id);
             self.dispatch_http_call(
                 "clusterb",
                 vec![
-                    (":method", "GET"),
-                    (":path", "/status/200"),
+                    (":method", "POST"),
+                    (":path", "/post"),
                     (":authority", "localhost:10000"),
+                    (":content-type", "application/json"),
+                    (":accept", "application/json"),
                     ],
-                    None,
+                    Some(json_bytes),
                     vec![],
                     Duration::from_secs(1),
                 ).unwrap_or_else(|err| {
