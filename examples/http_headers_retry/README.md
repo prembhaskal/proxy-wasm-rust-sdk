@@ -1,4 +1,4 @@
-## Proxy-Wasm plugin example: HTTP headers retry
+`## Proxy-Wasm plugin example: HTTP headers retry
 
 Proxy-Wasm plugin that logs HTTP request/response headers.
 
@@ -8,12 +8,16 @@ Proxy-Wasm plugin that logs HTTP request/response headers.
 $ rustup toolchain install nightly
 $ rustup target add wasm32-wasip1
 $ cargo build --target wasm32-wasip1 --release
-
-$ envoy -c envoy-retry.yaml --log-level trace
 $ cp target/wasm32-wasip1/release/proxy_wasm_example_http_headers.wasm /tmp/
 
-$ curl http://localhost:10000 --headers "host=httpbin"
+$ envoy -c envoy-retry.yaml --log-level trace
 
+$ curl http://localhost:10000/status/302 --headers "host=httpbin"
+
+$ start cluster 1 and 2
+$ alias docker=podman
+$ docker run -p 8081:80 kennethreitz/httpbin
+$ docker run -p 8082:80 kennethreitz/httpbin
 ```
 
 ### Using in Envoy

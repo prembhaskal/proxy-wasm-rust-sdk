@@ -13,16 +13,20 @@ static_resources:
                 stat_prefix: ingress_http
                 codec_type: auto
                 route_config:
-                  name: mycustomhttpbin
+                  name: xyz
                   virtual_hosts:
-                    - name: mycustomhttpbin
+                    - name: xyz
                       domains:
                         - "*"
                       routes:
                         - match:
+                            prefix: "/status/301"
+                          route:
+                            cluster: clustera
+                        - match:
                             prefix: "/"
                           route:
-                            cluster: mycustomhttpbin
+                            cluster: defaultcluster
                 http_filters:
                   - name: envoy.filters.http.wasm
                     typed_config:
@@ -40,12 +44,12 @@ static_resources:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
 
   clusters:
-    - name: mycustomhttpbin
+    - name: defaultcluster
       connect_timeout: 5000s
       type: strict_dns
       lb_policy: round_robin
       load_assignment:
-        cluster_name: mycustomhttpbin
+        cluster_name: defaultcluster
         endpoints:
           - lb_endpoints:
               - endpoint:
@@ -53,6 +57,32 @@ static_resources:
                     socket_address:
                       address: httpbin.org
                       port_value: 80
+    - name: clustera
+      connect_timeout: 5000s
+      type: strict_dns
+      lb_policy: round_robin
+      load_assignment:
+        cluster_name: clustera
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: localhost
+                      port_value: 8081
+    - name: clusterb
+      connect_timeout: 5000s
+      type: strict_dns
+      lb_policy: round_robin
+      load_assignment:
+        cluster_name: clusterb
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: localhost
+                      port_value: 8082
 
 admin:
   access_log_path: "/dev/null"

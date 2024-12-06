@@ -33,12 +33,14 @@ impl RootContext for HttpHeadersRoot {
     }
 
     fn create_http_context(&self, context_id: u32) -> Option<Box<dyn HttpContext>> {
-        Some(Box::new(HttpHeaders { context_id }))
+        let mut call_count = 0;
+        Some(Box::new(HttpHeaders { context_id, call_count}))
     }
 }
 
 struct HttpHeaders {
     context_id: u32,
+    call_count: u32,
 }
 
 impl Context for HttpHeaders {
@@ -49,8 +51,33 @@ impl Context for HttpHeaders {
         for (name, value) in resp_headers.iter() {
             info!("#{} http call response {}: {}", self.context_id, name, value)
         }
+        if self.call_count == 2 {
+            self.resume_http_response();
+        }
 
-        self.resume_http_response();
+        if self.call_count == 1 {
+            self.call_count+=1;
+            // make one more call
+            info!("#{} retrying request to new cluster", self.context_id);
+            self.dispatch_http_call(
+                "clusterb",
+                vec![
+                    (":method", "GET"),
+                    (":path", "/status/200"),
+                    (":authority", "localhost:10000"),
+                    ],
+                    None,
+                    vec![],
+                    Duration::from_secs(1),
+                ).unwrap_or_else(|err| {
+                    info!("#{} HTTP call failed: {:?}", self.context_id, err);
+                    0
+                });
+            }
+
+        // TODO overwrite response headers
+        // TODO overwrite response body in another flow.
+        // self.resume_http_response();
 
         // if let Some(body) = self.get_http_call_response_body(0, body_size) {
         //     if !body.is_empty() && body[0] % 2 == 0 {
@@ -70,6 +97,16 @@ impl HttpContext for HttpHeaders {
             info!("#{} -> {}: {}", self.context_id, name, value);
         }
 
+        // This will get the upstream cluster name where the request will be sent
+        match self.get_property(vec!["cluster_name"]) {
+            Some(cluster_name_bytes) => {
+                if let Ok(cluster_name) = String::from_utf8(cluster_name_bytes) {
+                    log::info!("Request will be sent to upstream cluster: {}", cluster_name);
+                }
+            },
+        _ => log::error!("Failed to get upstream cluster name"),
+        }
+
         match self.get_http_request_header(":path") {
             Some(path) if path == "/hello" => {
                 self.send_http_response(
@@ -85,42 +122,28 @@ impl HttpContext for HttpHeaders {
 
     fn on_http_response_headers(&mut self, _: usize, _: bool) -> Action {
         let mut status_code: u32 = 0;
+        let mut upstream = String::from("defaultcluster");
         for (name, value) in &self.get_http_response_headers() {
             info!("#{} response headers <- {}: {}", self.context_id, name, value);
             if name == ":status" {
                 status_code = value.parse().unwrap_or(0);
+            } else if name == ":freeform" {
+                upstream = value.to_string();
             }
         }
 
-        // TODO - we cannot get request headers here, need to cache them during request flow.
-        // let actual_headers = self.get_http_request_headers();
-        // info!("len of http request headers: {}", actual_headers.len());
-        // let mut retry_request_headers :Vec<(&str, &str)> = Vec::new();
-        // for (name, value) in actual_headers.iter() {
-        //     info!("#{} retry headers <- {}: {}", self.context_id, name, value);
-        //     retry_request_headers.push((name, value));
-        // }
+        // TODO - we cannot get request headers here, need to cache them during request flow. (Later)
 
-        // self.dispatch_http_call(
-        //     "ppp",
-        //     retry_request_headers,
-        //     None,
-        //     vec![],
-        //     Duration::from_secs(10),
-        // )
-        // .unwrap_or_else(|err| {
-        //     info!("#{} HTTP call failed: {:?}", self.context_id, err);
-        //     0 // Return a valid u32 value
-        // });
-
+        info!("cluster {} invoked", upstream);
 
         if status_code == 302 {
-            info!("#{} retrying request", self.context_id);
+            info!("#{} calling gateway again", self.context_id);
+            self.call_count+=1;
             self.dispatch_http_call(
-                "mycustomhttpbin",
+                "clustera",
                 vec![
                     (":method", "GET"),
-                    (":path", "/hello"),
+                    (":path", "/status/200"),
                     (":authority", "localhost:10000"),
                     ],
                     None,
