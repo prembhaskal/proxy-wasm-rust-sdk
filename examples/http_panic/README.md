@@ -24,6 +24,10 @@ $ curl -v http://localhsot:10000/hello
 
 ```
 
+### VM reload
+- Needs envoy >= 1.33
+- Add field - failure_policy: FAIL_RELOAD, this will by default reload VM, with backoff of 1s
+
 ### Using in Envoy
 
 This example can be run with [`docker compose`](https://docs.docker.com/compose/install/)

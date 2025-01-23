@@ -19,6 +19,7 @@ use proxy_wasm::types::*;
 proxy_wasm::main! {{
     proxy_wasm::set_log_level(LogLevel::Trace);
     proxy_wasm::set_root_context(|_| -> Box<dyn RootContext> { Box::new(HttpHeadersRoot) });
+    info!("wasm started");
 }}
 
 struct HttpHeadersRoot;
@@ -43,12 +44,42 @@ impl Context for HttpHeaders {}
 
 impl HttpContext for HttpHeaders {
     fn on_http_request_headers(&mut self, _: usize, _: bool) -> Action {
+        // TODO - this unwind thing is not really working.
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| self.on_http_request_headers_wrap())) {
+            Ok(action) => action,
+            Err(_) => {
+            info!("Panic occurred: ");
+            self.send_http_response(
+                500,
+                vec![("Content-Type", "text/plain")],
+                Some(b"Internal Server Error\n"),
+            );
+            Action::Pause
+            }
+        }
+    }
+    fn on_http_response_headers(&mut self, _: usize, _: bool) -> Action {
+        for (name, value) in &self.get_http_response_headers() {
+            info!("#{} <- {}: {}", self.context_id, name, value);
+        }
+        Action::Continue
+    }
+
+    fn on_log(&mut self) {
+        info!("#{} completed.", self.context_id);
+    }
+}
+
+impl HttpHeaders {
+
+    fn on_http_request_headers_wrap(&mut self) -> Action {
         for (name, value) in &self.get_http_request_headers() {
             info!("#{} -> {}: {}", self.context_id, name, value);
         }
 
         match self.get_http_request_header(":path") {
             Some(path) if path == "/hello" => {
+                // self.set_http_response_header("test", Some("val"));
                 self.send_http_response(
                     200,
                     vec![("Hello", "World"), ("Powered-By", "proxy-wasm")],
@@ -63,14 +94,4 @@ impl HttpContext for HttpHeaders {
         }
     }
 
-    fn on_http_response_headers(&mut self, _: usize, _: bool) -> Action {
-        for (name, value) in &self.get_http_response_headers() {
-            info!("#{} <- {}: {}", self.context_id, name, value);
-        }
-        Action::Continue
-    }
-
-    fn on_log(&mut self) {
-        info!("#{} completed.", self.context_id);
-    }
 }
