@@ -20,6 +20,12 @@ static_resources:
                         - "*"
                       routes:
                         - match:
+                            prefix: "/"
+                          direct_response:
+                            status: 200
+                            body:
+                              inline_string: "Request /hello and be welcomed wasm itself.!\n"
+                        - match:
                             prefix: "/status/301"
                           route:
                             cluster: clustera
@@ -36,6 +42,9 @@ static_resources:
                         config:
                           vm_config:
                             runtime: "envoy.wasm.runtime.v8"
+                            environment_variables:
+                              key_values:
+                                RUST_BACKTRACE: "full"
                             code:
                               local:
                                 filename: "/tmp/proxy_wasm_example_http_headers.wasm"

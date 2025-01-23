@@ -21,7 +21,14 @@ use std::time::Duration;
 proxy_wasm::main! {{
     proxy_wasm::set_log_level(LogLevel::Trace);
     proxy_wasm::set_root_context(|_| -> Box<dyn RootContext> { Box::new(HttpHeadersRoot) });
+    info!("main invoked");
 }}
+// // #[no_mangle]
+// pub fn _start() {
+//     proxy_wasm::set_log_level(LogLevel::Trace);
+//     proxy_wasm::set_root_context(|_| -> Box<dyn RootContext> { Box::new(HttpHeadersRoot) });
+//     info!("_started invoked");
+// }
 
 struct HttpHeadersRoot;
 
@@ -33,6 +40,7 @@ impl RootContext for HttpHeadersRoot {
     }
 
     fn create_http_context(&self, context_id: u32) -> Option<Box<dyn HttpContext>> {
+        info!("create_http_context invoked for id: {}", context_id);
         Some(Box::new(HttpHeaders {
             context_id,
             call_count: 0,
@@ -158,11 +166,11 @@ impl HttpContext for HttpHeaders {
             info!("#{} -> {}: {}", self.context_id, name, value);
         }
 
-        self.request_headers = self
-            .get_http_request_headers()
-            .into_iter()
-            .map(|(k, v)| (k.to_lowercase(), v))
-            .collect();
+        // self.request_headers = self
+        //     .get_http_request_headers()
+        //     .into_iter()
+        //     .map(|(k, v)| (k.to_lowercase(), v))
+        //     .collect();
 
         // This will get the upstream cluster name where the request will be sent
         match self.get_property(vec!["cluster_name"]) {

@@ -64,12 +64,22 @@ impl HttpContext for HttpHeaders {
 
     // When we pause before end_of_stream, then we don't have to accumulate body_size, envoy does this automatically.
     fn on_http_request_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
-        if !end_of_stream {
+        // if !end_of_stream {
             self.content_length += body_size;
-            info!("In method on_http_request_body, body_size: {}, end_of_stream: {}, content_length: {}", body_size, end_of_stream, self.content_length);
-            return Action::Pause;
-        }
+            // info!("In method on_http_request_body, body_size: {}, end_of_stream: {}, content_length: {}", body_size, end_of_stream, self.content_length);
+            // self.cached_body = self.get_http_request_body(0, self.content_length);
+            // return Action::Continue;
+        // }
         info!("In method on_http_request_body, body_size: {}, end_of_stream: {}, content_length: {}", body_size, end_of_stream, self.content_length);
+
+        // append to cached_body instead of overwriting
+        if let Some(ref mut cached_body) = self.cached_body {
+            if let Some(new_body) = self.get_http_request_body(self.content_length - body_size, body_size) {
+                cached_body.extend_from_slice(&new_body);
+            }
+        } else {
+            self.cached_body = self.get_http_request_body(0, self.content_length);
+        }
         self.cached_body = self.get_http_request_body(0, body_size);
         // self.cached_body = self.get_http_request_body(0, self.content_length);
 

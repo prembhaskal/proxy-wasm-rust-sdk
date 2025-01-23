@@ -16,7 +16,7 @@ use crate::hostcalls;
 use crate::traits::*;
 use crate::types::*;
 use hashbrown::HashMap;
-use log::trace;
+use log::{trace, info};
 use std::cell::{Cell, RefCell};
 
 thread_local! {
@@ -236,6 +236,7 @@ impl Dispatcher {
     }
 
     fn on_delete(&self, context_id: u32) {
+        info!("on delete invoked for {}", context_id);
         if !(self.http_streams.borrow_mut().remove(&context_id).is_some()
             || self.streams.borrow_mut().remove(&context_id).is_some()
             || self.roots.borrow_mut().remove(&context_id).is_some())

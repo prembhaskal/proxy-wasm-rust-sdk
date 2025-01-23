@@ -19,7 +19,7 @@ $ docker run -p 8081:80 kennethreitz/httpbin
 $ docker run -p 8082:80 kennethreitz/httpbin
 
 $ # make a 302 call which will trigger the retry flow.
-$ curl http://localhost:10000/status/302 --headers "host=httpbin"
+$ curl http://localhost:10000/status/302 --header "host=httpbin"
 
 $ # make a 302 status call with some body
 $ curl http://localhost:10000/status/302 --data '{"data": "original_data"}' -H "content-type: application/json"

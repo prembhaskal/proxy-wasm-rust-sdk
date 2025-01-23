@@ -54,3 +54,18 @@ static_resources:
                 - name: envoy.filters.http.router
                   typed_config:
                     "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+              access_log:
+              - filter:
+                name: envoy.access_loggers.file
+                typed_config:
+                  '@type': type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
+                  path: /dev/stdout
+                  log_format:
+                    text_format_source:
+                      inline_string: |
+                        %START_TIME% GWEnvoy LogPublisherImpl level=info startTime=%START_TIME%, txId=%REQ(INTUIT_TID?X-REQUEST-ID)%, method=%REQ(:METHOD)%, req=%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%, outReqUri=%REQ(:PATH)%, status=%RESPONSE_CODE%, xFor=%REQ(X-FORWARDED-FOR)%, requestSize=%BYTES_RECEIVED%, responseSize=%BYTES_SENT%, txTime=%DURATION%, svcTime=%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%, requestPayloadTransferTime=%REQUEST_TX_DURATION%, responsePayloadTransferTime=%RESPONSE_TX_DURATION%, outboundCipher=%UPSTREAM_TLS_CIPHER%, user_agent=%REQ(USER-AGENT)%
+admin:
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 15000

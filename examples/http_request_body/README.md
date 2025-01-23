@@ -1,6 +1,7 @@
 ## Proxy-Wasm plugin example: HTTP headers
 
 Proxy-Wasm plugin that cached HTTP request body.
+If we pause the processing, the request body is buffered and then we can copy whole body at the end.
 
 ### Building
 

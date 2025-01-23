@@ -51,6 +51,9 @@ static_resources:
                           code:
                             local:
                               filename: "/tmp/proxy_wasm_example_http_panic.wasm"
+                        reload_config:
+                          backoff:
+                            base_interval: 1s
                 - name: envoy.filters.http.router
                   typed_config:
                     "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router

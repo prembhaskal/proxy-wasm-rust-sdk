@@ -14,7 +14,7 @@ $ # assuming envoy installed locally, Also tested from company fork of envoy.
 $ envoy -c envoy-local.yaml --log-level info
 
 $ # make normal calls
-$ curl -v http://localhsot:10000/hello
+$ curl -v http://localhost:10000/hello
 
 $ # curl request to cause panic
 $ curl -v http://localhost:10000/panic
