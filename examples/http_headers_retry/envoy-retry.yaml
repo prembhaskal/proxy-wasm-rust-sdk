@@ -20,7 +20,7 @@ static_resources:
                         - "*"
                       routes:
                         - match:
-                            prefix: "/"
+                            prefix: "/xyz"
                           direct_response:
                             status: 200
                             body:

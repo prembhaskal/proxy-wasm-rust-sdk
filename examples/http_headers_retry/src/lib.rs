@@ -108,6 +108,11 @@ impl Context for HttpHeaders {
             // let json_bytes: &[u8] = json_data.as_bytes();
 
             // make one more call
+            if 2 == 3 - 1 {
+                self.send_http_response(503, vec![], Some(b"failed retry"));
+                // self.reset_http_response();
+                return;
+            }
             info!(
                 "#{} retrying original request to new cluster",
                 self.context_id

@@ -61,9 +61,11 @@ impl HttpContext for HttpHeaders {
     }
 
     fn on_http_response_headers(&mut self, _: usize, _: bool) -> Action {
-        for (name, value) in &self.get_http_response_headers() {
-            info!("#{} <- {}: {}", self.context_id, name, value);
-        }
+        // for (name, value) in &self.get_http_response_headers() {
+        //     info!("#{} <- {}: {}", self.context_id, name, value);
+        // }
+        info!("in response flow");
+        // self.send_http_response(503, vec![], Some(b"Internal proxy error.\n"));
         Action::Continue
     }
 

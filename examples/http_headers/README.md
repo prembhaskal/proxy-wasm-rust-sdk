@@ -6,6 +6,7 @@ Proxy-Wasm plugin that logs HTTP request/response headers.
 
 ```sh
 $ cargo build --target wasm32-wasip1 --release
+$ cp target/wasm32-wasip1/release/proxy_wasm_example_http_headers.wasm /tmp/
 ```
 
 ### Using in Envoy
