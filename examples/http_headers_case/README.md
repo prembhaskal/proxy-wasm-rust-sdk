@@ -1,6 +1,6 @@
-## Proxy-Wasm plugin example: HTTP headers
+## Proxy-Wasm plugin example: HTTP headers case
 
-Proxy-Wasm plugin that logs HTTP request/response headers.
+Checking if we can preserve header case for local replies.
 
 ### Building
 
