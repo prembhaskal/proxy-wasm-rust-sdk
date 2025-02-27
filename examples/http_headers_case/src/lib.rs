@@ -51,7 +51,7 @@ impl HttpContext for HttpHeaders {
             Some(path) if path == "/hello" => {
                 self.send_http_response(
                     200,
-                    vec![("Hello", "World"), ("Powered-By", "proxy-wasM")],
+                    vec![("Hello", "World"), ("Powered-BY", "proxy-wasM"), ("lower-case", "val1")],
                     Some(b"Hello, World!\n"),
                 );
                 Action::Pause

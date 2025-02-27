@@ -51,7 +51,7 @@ static_resources:
                       - "*"
                     routes:
                       - match:
-                          prefix: "/hello"
+                          prefix: "/hellox"
                         direct_response:
                           status: 200
                           body:
@@ -102,4 +102,14 @@ static_resources:
                     socket_address:
                       address: httpbin.org
                       port_value: 80
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          use_downstream_protocol_config:
+            http_protocol_options:
+              header_key_format:
+                stateful_formatter:
+                  name: preserve_case
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.http.header_formatters.preserve_case.v3.PreserveCaseFormatterConfig
     - name: clustera
