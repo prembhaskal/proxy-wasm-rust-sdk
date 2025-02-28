@@ -13,8 +13,11 @@
 // limitations under the License.
 
 use log::info;
+use log::error;
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
+
+mod proxy_calls;
 
 proxy_wasm::main! {{
     proxy_wasm::set_log_level(LogLevel::Trace);
@@ -45,6 +48,30 @@ impl HttpContext for HttpHeaders {
     fn on_http_request_headers(&mut self, _: usize, _: bool) -> Action {
         for (name, value) in &self.get_http_request_headers() {
             info!("#{} -> {}: {}", self.context_id, name, value);
+        }
+
+        for (name, value) in &self.get_http_request_headers_bytes() {
+            info!("bytes #{} -> {}: {}", self.context_id, name, String::from_utf8_lossy(value).to_string());
+        }
+
+        if let Some(intuit_tid_header) = self.get_http_request_header_bytes("intuit_tid") {
+            info!("normal check intuit_tid header present");
+        } else {
+            info!("normal check intuit_tid header missing")
+        }
+
+        match proxy_calls::get_header_value_bytes_empty_check("intuit_tid") {
+            Ok(res) => {
+                if let Some(intuit_tid_header) = res {
+                    info!("new-check intuit_tid present");
+                    info!("new-check intuit_tid value {}" , String::from_utf8_lossy(&intuit_tid_header).to_string());
+                } else {
+                    info!("new-check intuit_tid missing");
+                }
+                
+            } Err(status) => {
+                error!("new-check error in reading intuit_tid");
+            }
         }
 
         match self.get_http_request_header(":path") {
