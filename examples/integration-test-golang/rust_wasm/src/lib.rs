@@ -12,6 +12,8 @@ pub extern "C" fn on_start() -> i32 {
     // Dummy processing
     println!("Starting process for: {}", name);
     println!("Parameter length: {}", params_len);
+
+    // log("on_start method processing");
     
     // Return some dummy value
     42
@@ -36,3 +38,4 @@ pub extern "C" fn on_stop() -> i32 {
     // Return some dummy value
     24
 }
+
