@@ -51,6 +51,10 @@ static_resources:
                       - "*"
                     routes:
                       - match:
+                          prefix: "/headers"
+                        route:
+                          cluster: pythoncluster
+                      - match:
                           prefix: "/hellox"
                         direct_response:
                           status: 200
@@ -112,4 +116,16 @@ static_resources:
                   name: preserve_case
                   typed_config:
                     "@type": type.googleapis.com/envoy.extensions.http.header_formatters.preserve_case.v3.PreserveCaseFormatterConfig
-    - name: clustera
+    - name: pythoncluster
+      connect_timeout: 5000s
+      type: strict_dns
+      lb_policy: round_robin
+      load_assignment:
+        cluster_name: pythoncluster
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: 0.0.0.0
+                      port_value: 5000
