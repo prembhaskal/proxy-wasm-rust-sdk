@@ -24,7 +24,7 @@ Send HTTP request to `localhost:10000/hello`:
 $ curl -v http://localhost:10000/hello
 Hello, World!
 
-$ curl -v -X GET "http://localhost:10000/response-headers?Freeform=key1" -H "accept: application/json"
+$ curl -v "http://localhost:10000/response-headers?Freeform=key1" -H "accept: application/json"
 ```
 
 Expected Envoy logs:

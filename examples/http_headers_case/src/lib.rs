@@ -51,20 +51,26 @@ impl HttpContext for HttpHeaders {
             Some(path) if path == "/hello" => {
                 self.send_http_response(
                     200,
-                    vec![("Hello", "World"), ("Powered-BY", "proxy-wasM"), ("lower-case", "val1")],
-                    Some(b"Hello, World!\n"),
+                    vec![("Hello", "World"), ("Powered-BY", "proxy-wasM"), ("lower-case", "val1"), ("content-type", "application/json")],
+                    Some(b"{\"Hello\", \"World!\"}"),
                 );
                 Action::Pause
             }
             _ => Action::Continue,
         }
-    }
+   } 
 
     fn on_http_response_headers(&mut self, _: usize, _: bool) -> Action {
         // for (name, value) in &self.get_http_response_headers() {
         //     info!("#{} <- {}: {}", self.context_id, name, value);
         // }
         info!("in response flow");
+        self.set_http_response_header("lowercaseh1", Some("v1"));
+        self.set_http_response_header("mixeDCasEH2", Some("v2"));
+        self.set_http_response_header("UPPERCASEH3", Some("v3"));
+        self.set_http_response_header("Access-Control-Expose-Headers", Some("intuit_consent_resource,content-length,intuit_*,x-b3-parentspanid,test-header,intuit_consent_purpose,origin,x-b3-sampled,accept,authorization,intuit-*,tracestate,foo*,x-b3-traceid,x-b3-spanid,traceparent,x-requested-with,x-csrf-token,content-type,location"));
+        self.set_http_response_header("Access-Control-Allow-Credentials", Some("true"));
+        self.set_http_response_header("Access-Control-Allow-Origin", Some("https://qa2.unit1.turbotaxonline.intuit.com"));
         // self.send_http_response(503, vec![], Some(b"Internal proxy error.\n"));
         Action::Continue
     }
