@@ -60,6 +60,12 @@ impl HttpContext for HttpHeaders {
             info!("normal check intuit_tid header missing")
         }
 
+        if let Some(intuit_tid_header)  = self.get_http_request_header("intuit_tid") {
+            info!("normal get_http_request_header tid_header present ")
+        } else {
+            info!("normal get_http_request_header tid_header missing ")
+        }
+
         match proxy_calls::get_header_value_bytes_empty_check("intuit_tid") {
             Ok(res) => {
                 if let Some(intuit_tid_header) = res {
@@ -73,6 +79,22 @@ impl HttpContext for HttpHeaders {
                 error!("new-check error in reading intuit_tid");
             }
         }
+        
+        match proxy_calls::get_map_value_empty_check("intuit_tid") {
+            Ok(res) => {
+                if let Some(intuit_tid_header) = res {
+                    info!("new-check-string intuit_tid present");
+                    info!("new-check-string intuit_tid value {}" , intuit_tid_header);
+                } else {
+                    info!("new-check-string intuit_tid missing");
+                }
+                
+            } Err(status) => {
+                error!("new-check-string error in reading intuit_tid");
+            }
+        }
+
+
 
         match self.get_http_request_header(":path") {
             Some(path) if path == "/hello" => {

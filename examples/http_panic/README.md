@@ -11,7 +11,10 @@ $ cargo build --target wasm32-wasip1 --release
 $ cp target/wasm32-wasip1/release/proxy_wasm_example_http_panic.wasm /tmp/
 
 $ # assuming envoy installed locally, Also tested from company fork of envoy.
-$ envoy -c envoy-local.yaml --log-level info
+$ envoy -c envoy-local.yaml --log-level info --concurrency 1
+$ # for envoy 1.33 onwards, by default wasm is disabled, need to build locally.
+$ /tmp/envoy_133 -c ./envoy-local-reload.yaml --concurrency 1
+
 
 $ # make normal calls
 $ curl -v http://localhost:10000/hello

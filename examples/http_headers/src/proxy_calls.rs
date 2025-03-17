@@ -35,6 +35,38 @@ pub fn get_header_value_bytes_empty_check(key: &str) -> Result<Option<Bytes>, St
 }
 
 
+pub fn get_map_value_empty_check(key: &str) -> Result<Option<String>, Status> {
+    let map_type: proxy_wasm::types::MapType = MapType::HttpRequestHeaders;
+    let mut return_data: *mut u8 = null_mut();
+    let mut return_size: usize = 0;
+    unsafe {
+        match proxy_get_header_map_value(
+            map_type,
+            key.as_ptr(),
+            key.len(),
+            &mut return_data,
+            &mut return_size,
+        ) {
+            Status::Ok => {
+                if !return_data.is_null() {
+                    Ok(Some(
+                        String::from_utf8(Vec::from_raw_parts(
+                            return_data,
+                            return_size,
+                            return_size,
+                        ))
+                        .unwrap(),
+                    ))
+                } else {
+                    Ok(Some(String::new()))
+                }
+            }
+            Status::NotFound => Ok(None),
+            status => panic!("unexpected status: {}", status as u32),
+        }
+    }
+}
+
 extern "C" {
     fn proxy_get_header_map_value(
         map_type: MapType,
